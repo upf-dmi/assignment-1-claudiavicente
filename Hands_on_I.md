@@ -537,27 +537,126 @@ s_data_meta <- s_data_meta %>%
 ```
 
 ## Reproduce Figure 1 from the publication
-*(Whole code available in the md file)*
 
+<details>
+  <summary>Click to show/hide the code</summary>
 
 
 ``` r
+# Panel A: Histogram of Age
+plot_a <- ggplot(s_data_meta, aes(x = Age)) +
+  geom_histogram(binwidth = 10, fill = "#ddecec", color = "black", boundary = 20) +
+  labs(title = "Age", x = "Age (years)", y = "Frequency (n)") +
+  theme(plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+        legend.position = "none",
+        panel.background = element_rect(fill = "white", color = NA),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line.x.bottom = element_line(color = "black", size = 0.5),
+        axis.line.y.left = element_line(color = "black", size = 0.5),
+        axis.ticks.x = element_line(color = "black", size = 0.5),
+        axis.ticks.y = element_line(color = "black", size = 0.5),
+        axis.ticks.length = unit(0.2, "cm"),
+        axis.title.x = element_text(size = 10),
+        axis.title.y = element_text(size = 10)) +
+  scale_x_continuous(limits = c(18, 100),
+                     breaks = seq(20, 100, by = 20),
+                     expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0, 50),
+                     breaks = seq(0, 50, by = 10),
+                     expand = c(0, 0))
+
+# Panel B: Clinical Classification Table
+clinical_data <- data.frame(
+  "Clinical classification" = c("G1", "G2", "G3", "G4"),
+  "NIV" = c("-", "-/+", "+", "-/+"),
+  "AMV" = c("-", "+/-", "-", "+"),
+  "ARDS" = c("-", "-", "+", "+")
+)
+
+clinical_table <- tableGrob(
+  clinical_data,
+  rows = NULL,
+  theme = ttheme_minimal(
+    core = list(bg_params = list(fill = c("white", "grey90")), fg_params = list(hjust = 0.5)),
+    colhead = list(bg_params = list(fill = "grey80"), fg_params = list(fontface = "bold"))))
+
+panel_b_title <- textGrob(
+  "Definition of the clinical classification",
+  gp = gpar(fontsize = 10, fontface = "bold"),
+  x = 0.5, hjust = 0.5)
+
+panel_b_cowplot <- ggdraw() + 
+  draw_grob(
+    grid.arrange(
+      panel_b_title,
+      clinical_table,
+      ncol = 1,
+      heights = c(0.2, 0.8)))
+```
+
+![](Hands_on_I_files/figure-html/unnamed-chunk-16-1.svg)<!-- -->
+
+``` r
+# Panel C: Bar Chart for Clinical Classification
+plot_c <- ggplot(s_data_meta, aes(x = Group)) +
+  geom_bar(aes(fill = Group), color = "black") +
+  scale_fill_manual(values = c("#74dccb", "#f6ffb4", "#c1b0d8", "#ff686e")) +
+  labs(title = "Clinical classification", x = "Clinical classification", y = "Frequency (n)") +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+    legend.position = "none",
+    panel.background = element_rect(fill = "white", color = NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line.y = element_line(color = "black", size = 0.5),
+    axis.ticks.y = element_line(color = "black", size = 0.5),
+    axis.ticks.length = unit(0.2, "cm"),
+    axis.title.y = element_text(size = 10)
+  ) +
+  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5, size = 3) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.3)))
+
+# Panel D: Bar Chart for Vital Status
+plot_d <- ggplot(s_data_meta, aes(x = Death)) +
+  geom_bar(aes(fill = Death), color = "black") +
+  scale_fill_manual(values = c("#74dccb", "#f6ffb4")) +
+  labs(title = "Vital status", x = "Death", y = "Frequency (n)") +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 10, face = "bold"),
+    legend.position = "none",
+    panel.background = element_rect(fill = "white", color = NA),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.line.y = element_line(color = "black", size = 0.5),
+    axis.ticks.y = element_line(color = "black", size = 0.5),
+    axis.ticks.length = unit(0.2, "cm"),
+    axis.title.y = element_text(size = 10)
+  ) +
+  geom_text(stat = "count", aes(label = ..count..), vjust = -0.5, size = 3) +
+  scale_y_continuous(limits = c(0, 150), expand = c(0, 0.05))
+
 # Combinarion of the panels into a grid layout
 lay <- rbind(c(1, 3, 2),  c(1, 3, 3))
-final_figure <- plot_grid(
+final_figure_1 <- plot_grid(
   plot_grid(plot_a, panel_b_cowplot, labels = c("A", "B"), ncol = 2), 
   plot_grid(plot_c, plot_d, labels = c("C", "D"), ncol = 2),  
   ncol = 1,  
   rel_heights = c(1, 1.4))
-
-final_figure
 ```
+
+</details>
 
 ![](Hands_on_I_files/figure-html/unnamed-chunk-17-1.svg)<!-- -->
 
 ## Reproduce Figure 2 from the publication
 *but instead of representing the clusters in the annotation, represent the groups (G1 to G4)*
 
+<details>
+  <summary>Click to show/hide the code</summary>
+  
 
 ``` r
 file_path <- "data/cov_19_cytokine.xlsx"
@@ -609,18 +708,25 @@ lgd_col_1 <- Legend(
   legend_gp = gpar(fill = cols))
 p_leg_1 <- packLegend(lgd_col_1, direction = "vertical")
 
-draw(ht1, annotation_legend_list = p_leg_1, annotation_legend_side = "left")
-grid.rect(x = 0.1, y = 0.455, width = 0.19, height = 0.4, 
-          just = "center", gp = gpar(lwd = 1, col = "black", fill = NA))  
+final_figure_2a <- function() {
+  draw(ht1, annotation_legend_list = p_leg_1, annotation_legend_side = "left")
+  grid.rect(x = 0.1, y = 0.455, width = 0.19, height = 0.4, 
+            just = "center", gp = gpar(lwd = 1, col = "black", fill = NA))
+}
 ```
 
-![](Hands_on_I_files/figure-html/unnamed-chunk-19-1.svg)<!-- -->
+</details>
+
+![](Hands_on_I_files/figure-html/unnamed-chunk-20-1.svg)<!-- -->
 
 ## Improve figure 2 of the publication
 *Add a second annotation with information of death and a third one with information of gender*
 
 To improve the *Figure 2* of the publication, we have scaled the data and used a diverging color scale, as well as colorblind-friendly palettes for the annotations. We also improved the general aesthetics of the heatmap.
 
+<details>
+  <summary>Click to show/hide the code</summary>
+  
 
 ``` r
 ann_2 <- cbind(ann_1, Death = s_imp_ck$Death, Gender = s_imp_ck$Gender)
@@ -660,11 +766,14 @@ lgd_gender <- Legend(title = "Gender",
                      legend_gp = gpar(fill = c(set2[3], set2[4])))
 p_leg_2 <- packLegend(lgd_col_2, lgd_group, lgd_death, lgd_gender)
 
-draw(ht2, annotation_legend_list = p_leg_2)
+final_figure_2b <- draw(ht2, annotation_legend_list = p_leg_2)
 ```
 
-![](Hands_on_I_files/figure-html/unnamed-chunk-20-1.svg)<!-- -->
+![](Hands_on_I_files/figure-html/unnamed-chunk-21-1.svg)<!-- -->
 
+</details>
+
+![](Hands_on_I_files/figure-html/unnamed-chunk-22-1.svg)<!-- -->
 
 # session info {.unnumbered}
 
