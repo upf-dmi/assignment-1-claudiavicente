@@ -536,6 +536,31 @@ s_data_meta <- s_data_meta %>%
   filter(!is.na(ARDS.Diagnosis) & !is.na(Use.of.NIV) & !is.na(Death) & !is.na(Group))
 ```
 
+
+``` r
+file_path <- "data/cov_19_cytokine.xlsx"
+data_ck <- read.xlsx(file_path, startRow = 2, 
+                     na.strings = c("NI", "ND"), fillMergedCells = TRUE)
+
+colnames(data_ck)[1] <- "ID"
+data_ck[2:ncol(data_ck)] <- lapply(data_ck[2:ncol(data_ck)], as.numeric)
+data_ck$ID <- trimws(as.character(data_ck$ID)) 
+data_ck$ID <- gsub("HSDJ", "HSJD", data_ck$ID) 
+
+data_ck <- data_ck %>%
+  group_by(ID) %>% 
+  summarise(across(.cols = everything(), .fns = ~ median(.x, na.rm = TRUE)))  
+imp_ck <- mice(data_ck)
+imp_data_ck <- complete(imp_ck)
+s_imp_ck <- imp_data_ck[, c(1,3:14)]
+
+s_imp_ck <- merge(s_imp_ck, s_data_meta[, c("ID", "Group", "Death", "Gender")], 
+                  by = "ID", all.x = TRUE)
+s_imp_ck <- subset(s_imp_ck, !is.na(Group))
+
+hm_data <- t(s_imp_ck[, 2:13]) 
+```
+
 ## Reproduce Figure 1 from the publication
 
 <details>
@@ -595,7 +620,7 @@ panel_b_cowplot <- ggdraw() +
       heights = c(0.2, 0.8)))
 ```
 
-![](Hands_on_I_files/figure-html/unnamed-chunk-16-1.svg)<!-- -->
+![](Hands_on_I_files/figure-html/unnamed-chunk-17-1.svg)<!-- -->
 
 ``` r
 # Panel C: Bar Chart for Clinical Classification
@@ -649,38 +674,13 @@ final_figure_1 <- plot_grid(
 
 </details>
 
-![](Hands_on_I_files/figure-html/unnamed-chunk-17-1.svg)<!-- -->
+![](Hands_on_I_files/figure-html/unnamed-chunk-18-1.svg)<!-- -->
 
 ## Reproduce Figure 2 from the publication
 *but instead of representing the clusters in the annotation, represent the groups (G1 to G4)*
 
 <details>
   <summary>Click to show/hide the code</summary>
-  
-
-``` r
-file_path <- "data/cov_19_cytokine.xlsx"
-data_ck <- read.xlsx(file_path, startRow = 2, 
-                     na.strings = c("NI", "ND"), fillMergedCells = TRUE)
-
-colnames(data_ck)[1] <- "ID"
-data_ck[2:ncol(data_ck)] <- lapply(data_ck[2:ncol(data_ck)], as.numeric)
-data_ck$ID <- trimws(as.character(data_ck$ID)) 
-data_ck$ID <- gsub("HSDJ", "HSJD", data_ck$ID) 
-
-data_ck <- data_ck %>%
-  group_by(ID) %>% 
-  summarise(across(.cols = everything(), .fns = ~ median(.x, na.rm = TRUE)))  
-imp_ck <- mice(data_ck)
-imp_data_ck <- complete(imp_ck)
-s_imp_ck <- imp_data_ck[, c(1,3:14)]
-
-s_imp_ck <- merge(s_imp_ck, s_data_meta[, c("ID", "Group", "Death", "Gender")], 
-                  by = "ID", all.x = TRUE)
-s_imp_ck <- subset(s_imp_ck, !is.na(Group))
-
-hm_data <- t(s_imp_ck[, 2:13]) 
-```
 
 
 ``` r
